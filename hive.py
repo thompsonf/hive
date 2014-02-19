@@ -1,4 +1,7 @@
 import random
+import math
+from tkinter import *
+from tkinter import ttk
 
 dir_E = (1, 0)
 dir_SE = (0, 1)
@@ -10,6 +13,60 @@ dir_NE = (1, -1)
 dirs = [dir_E, dir_SE, dir_SW, dir_W, dir_NW, dir_NE]
 
 board = {}
+
+def display_board(size, selected_hex=None, valid_moves=set()):
+	root = Tk()
+	root.columnconfigure(0, weight=1)
+	root.rowconfigure(0, weight=1)
+	canvas = Canvas(root)
+	canvas.grid(column=0, row=0, sticky=(N, W, E, S))
+	canvas.configure(background='gray')
+
+	all_hexes = set(board.keys())
+
+	for axial_coords in all_hexes:
+		vertices = get_unrolled_vertices_from_axial(axial_coords, size, (300, 300))
+		if axial_coords != selected_hex:
+			canvas.create_polygon(vertices, outline='black', fill='white', width=3)
+		else:
+			canvas.create_polygon(vertices, outline='black', fill='red', width=6)
+
+	for axial_coords in valid_moves:
+		vertices = get_unrolled_vertices_from_axial(axial_coords, size, (300, 300))
+		canvas.create_polygon(vertices, outline='black', fill='green', width=1)
+
+	root.mainloop()
+
+def get_unrolled_vertices_from_axial(axial_coords, size, offset):
+	center = get_center_coords(axial_coords, size)
+	center = add_coords(center, offset)
+	vertices = unroll_coords(get_vertices(center, size))
+	return vertices
+
+def get_center_coords(axial_coords, size):
+	center_x = size * math.sqrt(3) * (axial_coords[0] + axial_coords[1] * 0.5)
+	center_y = size * 1.5 * axial_coords[1]
+	return (center_x, center_y)
+
+def get_vertices(center, size):
+	pos_x_diff = size * math.sqrt(3) * 0.5
+	pos_y_diff = size * 0.5
+
+	return (
+				add_coords(center, (0, size)),
+				add_coords(center, (pos_x_diff, pos_y_diff)),
+				add_coords(center, (pos_x_diff, -pos_y_diff)),
+				add_coords(center, (0, -size)),
+				add_coords(center, (-pos_x_diff, -pos_y_diff)),
+				add_coords(center, (-pos_x_diff, pos_y_diff))
+		   )
+
+def unroll_coords(coords):
+	ret = []
+	for coord in coords:
+		ret.append(coord[0])
+		ret.append(coord[1])
+	return ret
 
 def add_coords(c1, c2):
 	return (c1[0] + c2[0], c1[1] + c2[1])
@@ -139,6 +196,8 @@ def test_ant_movement():
 			(-1,2), (1,2)])
 		)
 
+	display_board(50, selected_hex=(0,2), valid_moves=board[(0,2)][-1].getValidMoves())
+
 	#second test
 	non_ant_hexes = [(1,-2), (2,-2), (3,-2),
 	(1,-1),
@@ -166,6 +225,8 @@ def test_queen_movement():
 	board[(0,2)] = [Queen((0,2), 'w')]
 
 	print( board[(0,2)][-1].getValidMoves() )
+
+	display_board(50, selected_hex=(0,2), valid_moves=board[(0,2)][-1].getValidMoves())
 
 test_queen_movement()
 test_ant_movement()
